@@ -64,4 +64,9 @@ public abstract class ChessPieceBase implements ChessPiece {
     public String toString() {
         return getColor().name() + " " + getClass().getSimpleName();
     }
+
+    @Override
+    public void setLocation(Square newLocation) {
+        this.location = newLocation;
+    }
 }
