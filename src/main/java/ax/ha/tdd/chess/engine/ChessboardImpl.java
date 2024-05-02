@@ -2,6 +2,7 @@ package ax.ha.tdd.chess.engine;
 
 import ax.ha.tdd.chess.engine.pieces.*;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -55,6 +56,26 @@ public class ChessboardImpl implements Chessboard {
                     addPiece(new Pawn(Color.BLACK, new Square(xCoordinate, yCoordinate)));
                     addPiece(new Pawn(Color.WHITE, new Square(xCoordinate, 7 - yCoordinate)));
                 }
+                case ROOK -> {
+                    addPiece(new Rook(Color.BLACK, new Square(xCoordinate, yCoordinate)));
+                    addPiece(new Rook(Color.WHITE, new Square(xCoordinate, 7 - yCoordinate)));
+                }
+                case BISHOP -> {
+                    addPiece(new Bishop(Color.BLACK, new Square(xCoordinate, yCoordinate)));
+                    addPiece(new Bishop(Color.WHITE, new Square(xCoordinate, 7 - yCoordinate)));
+                }
+                case KING -> {
+                    addPiece(new King(Color.BLACK, new Square(xCoordinate, yCoordinate)));
+                    addPiece(new King(Color.WHITE, new Square(xCoordinate, 7 - yCoordinate)));
+                }
+                case QUEEN -> {
+                    addPiece(new Queen(Color.BLACK, new Square(xCoordinate, yCoordinate)));
+                    addPiece(new Queen(Color.WHITE, new Square(xCoordinate,7 - yCoordinate)));
+                }
+                case KNIGHT -> {
+                    addPiece(new Knight(Color.BLACK, new Square(xCoordinate, yCoordinate)));
+                    addPiece(new Knight(Color.WHITE, new Square(xCoordinate,7 - yCoordinate)));
+                }
                 //TODO, when you implement a piece, add it as a case in this switch
                 default -> {
                     addPiece(new ChessPieceStub(pieceType, Color.BLACK, new Square(xCoordinate, yCoordinate)));
@@ -64,9 +85,49 @@ public class ChessboardImpl implements Chessboard {
         });
         return this;
     }
+    @Override
+    public List<ChessPiece> getPieces() {
+        List<ChessPiece> pieces = new ArrayList<>();
+        for (ChessPiece[] row : board) {
+            for (ChessPiece piece : row) {
+                if (piece != null) {
+                    pieces.add(piece);
+                }
+            }
+        }
+        return pieces;
+    }
+
+    public boolean isKingInCheck(Color kingColor) {
+        Square kingPosition = findKingPosition(kingColor);
+        return kingPosition != null && getPieces().stream()
+                .filter(piece -> piece.getColor() != kingColor)
+                .anyMatch(piece -> piece.canMove(this, kingPosition));
+    }
+    private Square findKingPosition(Color kingColor) {
+        for (int y = 0; y < board.length; y++) {
+            for (int x = 0; x < board[y].length; x++) {
+                ChessPiece piece = board[y][x];
+                if (piece instanceof King && piece.getColor() == kingColor) {
+                    return new Square(x, y);
+                }
+            }
+        }
+        return null;
+    }
+
 
     @Override
     public Iterator<ChessPiece[]> iterator() {
         return List.of(board).iterator();
+    }
+
+    public void movePiece(Square from, Square to) {
+        ChessPiece piece = getPieceAt(from);
+        if (piece != null) {
+            removePieceAt(from);
+            piece.setLocation(to);  // Update piece location
+            addPiece(piece);        // Re-add to the board at the new location
+        }
     }
 }
