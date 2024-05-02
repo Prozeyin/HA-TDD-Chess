@@ -1,15 +1,20 @@
 package ax.ha.tdd.chess.engine;
 
+import ax.ha.tdd.chess.engine.pieces.ChessPiece;
+
+import java.util.regex.Pattern;
+
 public class GameImpl implements Game{
 
     final ChessboardImpl board = ChessboardImpl.startingBoard();
-
     boolean isNewGame = true;
+    private Color currentPlayer = Color.WHITE; // Start the game with White by convention
+
+    private String lastMoveResult = "Game hasn't begun";
 
     @Override
     public Color getPlayerToMove() {
-        //TODO this should reflect the current state.
-        return Color.WHITE;
+        return currentPlayer;
     }
 
     @Override
@@ -19,24 +24,53 @@ public class GameImpl implements Game{
 
     @Override
     public String getLastMoveResult() {
-        //TODO this should be used to show the player what happened
-        //Illegal move, correct move, e2 moved to e4 etc. up to you!
         if (isNewGame) {
             return "Game hasn't begun";
         }
-        return "Last move was successful (default reply, change this)";
+        return lastMoveResult;
     }
 
     @Override
     public void move(String move) {
-        //TODO this should trigger your move logic.
-        //1. Parse the source and destination of the input "move"
+        if(isNewGame){
+            isNewGame = false;
+        }
+        String moveRegex = "^[a-h][1-8][a-h][1-8]$";
+        if (move == null || !Pattern.matches(moveRegex, move)) {
+            lastMoveResult = "Invalid move format: " + move;
+            return;
+        }
+        try {
+            Square fromSquare = new Square(move.substring(0, 2));
+            Square toSquare = new Square(move.substring(3, 5));
+            ChessPiece piece = board.getPieceAt(fromSquare);
 
-        //2. Check if the piece is allowed to move to the destination
+            if (piece == null || piece.getColor() != currentPlayer) {
+                lastMoveResult = "No piece at source or not your turn. " + move;
+                return;
+            }
 
-        //3. If so, update board (and last move message), otherwise only update last move message to show that an illegal move was tried
+            if (piece.canMove(board, toSquare)) {
+                board.movePiece(fromSquare, toSquare);
+                if (board.isKingInCheck(currentPlayer)) {
+                    board.movePiece(toSquare, fromSquare); // Undo the move
+                    lastMoveResult = "Move results in check. " + move;
+                } else {
+                    currentPlayer = currentPlayer == Color.WHITE ? Color.BLACK : Color.WHITE;
+                    if(board.isKingInCheck(currentPlayer))
+                    {
+                        lastMoveResult = move + ": " + currentPlayer.toString().toLowerCase() + " king is in check";
+                    }
+                    else {
+                        lastMoveResult = move;
+                    }
 
-        isNewGame = false;
-        System.out.println("Player tried to perform move: " + move);
+                }
+            } else {
+                lastMoveResult = "Illegal move. " + move;
+            }
+        } catch (IllegalArgumentException e) {
+            lastMoveResult = "Invalid coordinates provided. " + move;
+        }
     }
 }
